@@ -1,0 +1,29 @@
+# --- Environment Variables & Secrets (CRITICAL) ---
+# Never commit your API keys, ports, or credentials to GitHub
+.env
+
+# --- Python Clutter ---
+# Ignore compiled Python bytecode and virtual environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# --- Operating System Clutter ---
+# Ignore hidden system files that Windows and macOS generate automatically
+.DS_Store
+Thumbs.db
+
+# --- IDE and Editor Configurations ---
+# Ignore local VS Code or PyCharm settings files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp

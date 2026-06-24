@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # The Streaming Core (Kafka API Compatible)
+  streaming-broker:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.5
+    container_name: uber-core-broker
+    command:
+      - redpanda start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://streaming-broker:9092,external://localhost:19092
+    ports:
+      - "19092:19092"
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "info"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # The In-Memory Live State Cache
+  state-cache:
+    image: redis:7-alpine
+    container_name: uber-core-cache
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+networks:
+  default:
+    name: uber-network
