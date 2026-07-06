@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uber-matching-engine-deployment
+  labels:
+    app: matching-engine
+spec:
+  replicas: 3 # Spin up 3 parallel consumer clones across our cloud cluster
+  selector:
+    matchLabels:
+      app: matching-engine
+  template:
+    metadata:
+      labels:
+        app: matching-engine
+    spec:
+      containers:
+      - name: matching-engine-core
+        image: uber-matching-engine:v1.0.0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: KAFKA_BROKER_URL
+          value: "uber-core-broker:9092" # Reaches Redpanda using K8s core network routing
+        - name: REDIS_HOST
+          value: "uber-core-cache"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: TELEMETRY_TOPIC
+          value: "driver-telemetry"
+        - name: CONSUMER_GROUP_ID
+          value: "uber-matching-processor"
+        resources: # Guardrails preventing memory or compute resource exhaustion
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
