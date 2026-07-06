@@ -1,4 +1,4 @@
-#FleetPulse
+FleetPulse
 
 This project is a Uber Core Stream Engine simulator, which was made to understand and implement kubernets, and dockers while also understanding how redis and kafka databases work in real time under load.
 
@@ -41,4 +41,9 @@ Plaintext
 ├── deployment.yaml  # Production cloud auto-scaling Kubernetes manifest
 
 └── docker-compose.yml
+
+
+simpler way to run -> clone the repo, install dependecies and run:
+
+python -m streamlit run services/dashboard/app.py
 
