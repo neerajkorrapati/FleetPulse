@@ -1,118 +1,187 @@
 import json
 import os
+import sys
 import time
+import subprocess
 from datetime import datetime
 from dotenv import load_dotenv
 import pandas as pd
 import redis
 import streamlit as st
 
-# Load environment configuration from the root directory
-load_dotenv(dotenv_path="../../.env")
+# 1. Compute Dynamic Root Path Alignment
+# Locates C:\Users\neeraj.korrapati\Desktop\Uber-core-StreamEngine automatically
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+load_dotenv(dotenv_path=os.path.join(ROOT_DIR, ".env"))
 
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 
-# 1. Page Configuration Framework
+# 2. Page Canvas Frame Layout
 st.set_page_config(
-    page_title="Uber Core Stream Engine Dashboard",
-    page_icon="🚗",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="Uber Core Stream Engine Orchestrator",
+    page_icon="🎛️",
+    layout="wide"
 )
 
-st.title("🚗 Core Stream Telemetry & State Grid Monitor")
+st.title("🎛️ Distributed Pipeline Automation Control Center")
 st.markdown("---")
 
-# 2. Cached Connection Pool to Redis RAM Grid
+# 3. Persistent Global Process Manager Container
+class PipelineOrchestrator:
+    def __init__(self):
+        self.engine_process = None
+        self.simulator_process = None
+        self.docker_status = "Offline"
+
+    def boot_docker(self):
+        st.toast("Spinning up background Docker nodes...", icon="🐳")
+        subprocess.run(["docker", "compose", "up", "-d"], cwd=ROOT_DIR)
+        self.docker_status = "Online"
+        time.sleep(2)
+
+    def shutdown_docker(self):
+        st.toast("Dropping database containers...", icon="🛑")
+        self.stop_engine()
+        self.stop_simulator()
+        subprocess.run(["docker", "compose", "down"], cwd=ROOT_DIR)
+        self.docker_status = "Offline"
+
+    def start_engine(self):
+        if not self.engine_process or self.engine_process.poll() is not None:
+            script_path = os.path.join(ROOT_DIR, "services", "engine", "matching_engine.py")
+            self.engine_process = subprocess.Popen([sys.executable, script_path], cwd=ROOT_DIR)
+            st.toast("Asynchronous Consumer Core active.", icon="🧠")
+
+    def stop_engine(self):
+        if self.engine_process and self.engine_process.poll() is None:
+            self.engine_process.terminate()
+            self.engine_process.wait()
+            self.engine_process = None
+            st.toast("Consumer Core cleanly stopped.", icon="⏹️")
+
+    def start_simulator(self):
+        if not self.simulator_process or self.simulator_process.poll() is not None:
+            script_path = os.path.join(ROOT_DIR, "services", "simulator", "driver_producer.py")
+            self.simulator_process = subprocess.Popen([sys.executable, script_path], cwd=ROOT_DIR)
+            st.toast("Telemetry Ingestion Thread Matrix activated.", icon="🚗")
+
+    def stop_simulator(self):
+        if self.simulator_process and self.simulator_process.poll() is None:
+            self.simulator_process.terminate()
+            self.simulator_process.wait()
+            self.simulator_process = None
+            st.toast("Telemetry Generator offline.", icon="⏹️")
+
+# Cache the orchestrator as a resource so running processes persist across script reruns
 @st.cache_resource
-def get_redis_client():
-    return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+def get_orchestrator():
+    return PipelineOrchestrator()
 
-try:
-    redis_client = get_redis_client()
-except Exception as e:
-    st.error(f"Failed to connect to Redis State Grid: {str(e)}")
+orchestrator = get_orchestrator()
 
-# 3. Sidebar Pipeline Control Layer
-st.sidebar.header("⚙️ Pipeline Controls")
-auto_refresh = st.sidebar.checkbox("Enable Live Engine Tracking", value=True)
-refresh_interval = st.sidebar.slider("Refresh Frequency (seconds)", 1, 5, 2)
+# 4. Interactive Sidebar Process Control Matrix
+st.sidebar.header("🎛️ Pipeline Automation Switches")
+st.sidebar.markdown("---")
+
+# Section A: Docker Container Lifecycle
+st.sidebar.subheader("1. Container Layer")
+if orchestrator.docker_status == "Offline":
+    st.sidebar.error("🐳 Docker Appliances: Down")
+    if st.sidebar.button("Launch Docker Cluster"):
+        orchestrator.boot_docker()
+        st.rerun()
+else:
+    st.sidebar.success("🐳 Docker Appliances: Running")
+    if st.sidebar.button("Teardown Docker Cluster"):
+        orchestrator.shutdown_docker()
+        st.rerun()
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### System Architecture Status")
-st.sidebar.success("📡 Ingestion Bridge: Online")
-st.sidebar.success("🧠 Consumer Matching Engine: Online")
-st.sidebar.success("⚡ In-Memory Cache Grid: Online")
 
-# 4. Infinite View Loop for Real-Time State Rendering
-view_container = st.empty()
+# Section B: Engine Processing Loop
+st.sidebar.subheader("2. Matching Engine Core")
+is_engine_active = orchestrator.engine_process and orchestrator.engine_process.poll() is None
+if not is_engine_active:
+    st.sidebar.error("🧠 Consumer Core: Stopped")
+    if st.sidebar.button("Start Processing Loop", disabled=(orchestrator.docker_status == "Offline")):
+        orchestrator.start_engine()
+        st.rerun()
+else:
+    st.sidebar.success("🧠 Consumer Core: Active")
+    if st.sidebar.button("Stop Processing Loop"):
+        orchestrator.stop_engine()
+        st.rerun()
 
-while True:
-    with view_container.container():
-        # Fetch the complete real-time dictionary frame out of Redis RAM
-        all_drivers = redis_client.hgetall("driver:state")
+st.sidebar.markdown("---")
+
+# Section C: Driver Simulation Fleet
+st.sidebar.subheader("3. Fleet Ingestion Firehose")
+is_sim_active = orchestrator.simulator_process and orchestrator.simulator_process.poll() is None
+if not is_sim_active:
+    st.sidebar.error("🚗 Driver Threads: Idle")
+    if st.sidebar.button("Ignite Driver Matrix", disabled=(orchestrator.docker_status == "Offline")):
+        orchestrator.start_simulator()
+        st.rerun()
+else:
+    st.sidebar.success("🚗 Driver Threads: Streaming")
+    if st.sidebar.button("Stop Driver Matrix"):
+        orchestrator.stop_simulator()
+        st.rerun()
+
+# 5. Core Operational UI Grid Evaluation Logic
+try:
+    redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    all_drivers = redis_client.hgetall("driver:state")
+except Exception:
+    all_drivers = None
+
+if orchestrator.docker_status == "Offline" or all_drivers is None:
+    st.info("🔌 System Backends are Offline. Click 'Launch Docker Cluster' in the sidebar panel to initialize your streaming environment.")
+elif not all_drivers:
+    st.warning("⏳ Cache Grid Initialized! Boot the Consumer Core and Ignite your Driver Matrix to populate your real-time analytics data grid.")
+else:
+    # Compile telemetry frames dynamically from RAM
+    parsed_drivers = []
+    avail, ontrip = 0, 0
+    
+    for d_id, data_str in all_drivers.items():
+        payload = json.loads(data_str)
+        status = payload.get("status", "OFFLINE")
+        if status == "AVAILABLE":
+            avail += 1
+        elif status == "ON_TRIP":
+            ontrip += 1
+            
+        parsed_drivers.append({
+            "Driver ID": d_id,
+            "latitude": float(payload.get("latitude", 0.0)),
+            "longitude": float(payload.get("longitude", 0.0)),
+            "Operational Status": status,
+            "Last Update (UTC)": payload.get("last_updated", "")
+        })
+    
+    df = pd.DataFrame(parsed_drivers)
+    
+    # Render KPIs
+    kpi1, kpi2, kpi3 = st.columns(3)
+    kpi1.metric("Total Connected Vehicles", f"{len(df)} Units")
+    kpi2.metric("🟢 Available Status", f"{avail} Units")
+    kpi3.metric("🟡 Active Trip Status", f"{ontrip} Units")
+    
+    st.markdown("---")
+    
+    # Map & Data Grid Views
+    map_col, grid_col = st.columns([2, 1])
+    
+    with map_col:
+        st.subheader("🗺️ Live Geospatial Projection Mesh")
+        st.map(df, size=40, color="#1f77b4")
         
-        if not all_drivers:
-            st.info("⏳ Waiting for active telemetry records to hit the Redis grid... Start your driver simulation engine.")
-        else:
-            # Process and parse raw strings into a clean dataset array
-            parsed_drivers = []
-            available_count = 0
-            ontrip_count = 0
-            offline_count = 0
-            
-            for d_id, data_str in all_drivers.items():
-                payload = json.loads(data_str)
-                status = payload.get("status", "OFFLINE")
-                
-                if status == "AVAILABLE":
-                    available_count += 1
-                elif status == "ON_TRIP":
-                    ontrip_count += 1
-                else:
-                    offline_count += 1
-                    
-                parsed_drivers.append({
-                    "Driver ID": d_id,
-                    "latitude": float(payload.get("latitude", 0.0)),
-                    "longitude": float(payload.get("longitude", 0.0)),
-                    "Operational Status": status,
-                    "Last Transmission (UTC)": payload.get("last_updated", "")
-                })
-            
-            # Map array to a structured DataFrame
-            df = pd.DataFrame(parsed_drivers)
-            
-            # 5. Core Metric Card Layout
-            metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-            metric_col1.metric("Total Monitored Fleet", f"{len(df)} Cars")
-            metric_col2.metric("🟢 Available Status", f"{available_count} Cars")
-            metric_col3.metric("🟡 Active Trip Status", f"{ontrip_count} Cars")
-            metric_col4.metric("🔴 Offline Status", f"{offline_count} Cars")
-            
-            st.markdown("---")
-            
-            # 6. Interactive Geospatial Mapping Layer
-            st.subheader("🗺️ Live Fleet Geospatial Map Projection")
-            # Streamlit maps require explicit lower-case 'latitude' and 'longitude' labels
-            st.map(df, size=40, color="#1f77b4" if available_count > 0 else "#ff7f0e")
-            
-            st.markdown("---")
-            
-            # 7. Complete Tabular Data Grid Overview
-            st.subheader("📋 Core RAM Cache Table Registry")
-            st.dataframe(
-                df.sort_values(by="Driver ID"),
-                use_container_width=True,
-                hide_index=True
-            )
-            
-            # Timestamp stamp reflecting last grid evaluation run
-            st.caption(f"Last UI Render Scan: {datetime.now().strftime('%H:%M:%S')} | Target Broker Node: {REDIS_HOST}:{REDIS_PORT}")
-            
-    # Break out of the loop instantly if user unchecks 'Live Engine Tracking'
-    if not auto_refresh:
-        break
+    with grid_col:
+        st.subheader("📋 In-Memory State Register")
+        st.dataframe(df.sort_values("Driver ID")[["Driver ID", "Operational Status"]], hide_index=True, use_container_width=True)
         
-    time.sleep(refresh_interval)
+    # Periodic screen automatic refresh trigger loop
+    time.sleep(2)
+    st.rerun()
