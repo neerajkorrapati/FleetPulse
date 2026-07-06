@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import subprocess
+import shutil  # Added for proactive environment checking
 from datetime import datetime
 from dotenv import load_dotenv
 import pandas as pd
@@ -26,12 +27,17 @@ st.set_page_config(
 st.title("🎛️ Distributed Pipeline Automation Control Center")
 st.markdown("---")
 
-# 3. Persistent Global Process Manager Container with Cloud-Safe Handling
+# 3. Persistent Global Process Manager Container
 class PipelineOrchestrator:
     def __init__(self):
         self.engine_process = None
         self.simulator_process = None
-        self.docker_status = "Offline"
+        
+        # Proactively check if Docker is installed in the hosting system path
+        if shutil.which("docker") is None:
+            self.docker_status = "Unavailable"
+        else:
+            self.docker_status = "Offline"
 
     def boot_docker(self):
         try:
@@ -41,7 +47,6 @@ class PipelineOrchestrator:
             time.sleep(2)
         except (FileNotFoundError, subprocess.SubprocessError):
             self.docker_status = "Unavailable"
-            st.toast("Docker CLI unavailable in this environment.", icon="⚠️")
 
     def shutdown_docker(self):
         try:
@@ -62,13 +67,6 @@ class PipelineOrchestrator:
             except FileNotFoundError:
                 st.error("❌ Python engine scripts cannot be executed from this environment.")
 
-    def stop_engine(self):
-        if self.engine_process and self.engine_process.poll() is None:
-            self.engine_process.terminate()
-            self.engine_process.wait()
-            self.engine_process = None
-            st.toast("Consumer Core cleanly stopped.", icon="⏹️")
-
     def start_simulator(self):
         if not self.simulator_process or self.simulator_process.poll() is not None:
             script_path = os.path.join(ROOT_DIR, "services", "simulator", "driver_producer.py")
@@ -77,6 +75,13 @@ class PipelineOrchestrator:
                 st.toast("Telemetry Ingestion Thread Matrix activated.", icon="🚗")
             except FileNotFoundError:
                 st.error("❌ Fleet simulator cannot be executed from this environment.")
+
+    def stop_engine(self):
+        if self.engine_process and self.engine_process.poll() is None:
+            self.engine_process.terminate()
+            self.engine_process.wait()
+            self.engine_process = None
+            st.toast("Consumer Core cleanly stopped.", icon="⏹️")
 
     def stop_simulator(self):
         if self.simulator_process and self.simulator_process.poll() is None:
