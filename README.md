@@ -1,4 +1,7 @@
-Uber Core Stream Engine
+##FleetPulse
+
+This project is a Uber Core Stream Engine simulator, which was made to understand and implement kubernets, and dockers while also understanding how redis and kafka databases work in real time under load.
+
 A real-time telemetry pipeline that ingests, sequences, and caches high-frequency GPS data from a simulated vehicle fleet. It decouples continuous historical event logs from a sub-millisecond live state cache.
 
 Live Demo: uber-core-stream-engine.streamlit.app
@@ -38,3 +41,4 @@ Plaintext
 ├── deployment.yaml  # Production cloud auto-scaling Kubernetes manifest
 
 └── docker-compose.yml
+
