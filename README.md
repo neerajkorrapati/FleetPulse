@@ -26,9 +26,15 @@ Open http://localhost:8501 to control the pipeline and view the live map tracker
 
 Project Structure
 Plaintext
+
 ├── services/
+
 │   ├── simulator/   # Multi-threaded telemetry producer & Dockerfile
+
 │   ├── engine/      # Kafka consumer core & local verification scripts
+
 │   └── dashboard/   # Unified Streamlit orchestration application
+
 ├── deployment.yaml  # Production cloud auto-scaling Kubernetes manifest
+
 └── docker-compose.yml
